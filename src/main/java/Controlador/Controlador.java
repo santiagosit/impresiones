@@ -4,8 +4,6 @@
  */
 package Controlador;
 
-import Modelos.Usuario;
-import Modelos.UsuarioDAO;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -20,6 +18,9 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import Modelos.UsuarioDAO;
+import Modelos.Usuario;
 
 /**
  *
@@ -90,57 +91,82 @@ public class Controlador extends HttpServlet {
             String ciudad = request.getParameter("ciudad");
             String documento = request.getParameter("documento");
             String password = request.getParameter("password");
-            String confirm_password = request.getParameter("confirm-password");
+
             try {
-                Class.forName("com.mysql.jdbc.Driver");
-                Connection conn;
-                conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
-                String sql = "INSERT INTO usuarios(email,fullname,telefono,direccion,ciudad,documento,password) VALUES (?,?,?,?,?,?,?)";
-                try (
-                        PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, email);
-                    ps.setString(2, fullname);
-                    ps.setString(3, telefono);
-                    ps.setString(4, direccion);
-                    ps.setString(5, ciudad);
-                    ps.setString(6, documento);
-                    ps.setString(7, password);
-                    ps.executeUpdate();
-                    response.sendRedirect("index.jsp");
+                // Intentar cargar el driver JDBC
+                Class.forName("com.mysql.cj.jdbc.Driver");
+
+                // Obtener la conexión
+                Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+                if (conn == null) {
+                    throw new SQLException("No se pudo establecer la conexión a la base de datos.");
                 }
+
+                // Sentencia SQL
+                String sql = "INSERT INTO usuario (email, fullname, telefono, direccion, rol, ciudad, documento, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, email);
+                ps.setString(2, fullname);
+                ps.setString(3, telefono);
+                ps.setString(4, direccion);
+                ps.setInt(5, 1);
+                ps.setString(6, ciudad);
+                ps.setString(7, documento);
+                ps.setString(8, password);
+
+                ps.executeUpdate();
                 conn.close();
+                response.sendRedirect("index.jsp");
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+                request.setAttribute("errorMessage", "Error al conectar con la base de datos. Por favor, inténtelo de nuevo más tarde.");
+                request.getRequestDispatcher("registro.jsp").forward(request, response);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                request.setAttribute("errorMessage", e);
+                request.getRequestDispatcher("registro.jsp").forward(request, response);
             } catch (Exception e) {
-                response.sendRedirect("registro.jsp");
+                e.printStackTrace();
+                request.setAttribute("errorMessage", "Se ha producido un error inesperado. Por favor, inténtelo de nuevo.");
+                request.getRequestDispatcher("registro.jsp").forward(request, response);
             }
-
         } else if (accion.equalsIgnoreCase("login")) {
-            UsuarioDAO dao = new UsuarioDAO();
-            String email = request.getParameter("email");
-            //String contraseña = UsuarioDAO.cifrarSHA256(request.getParameter("contraseñaL"));
-            String password = request.getParameter("password");
-            Usuario user = new Usuario(email, password);
-            if (accion.equalsIgnoreCase("login")) {
-                int r;
-                r = dao.validar(user);
-                if ("admin".equals(email) && "1234".equals(password)) {
-                    HttpSession session = request.getSession();
-                    response.sendRedirect("admin.jsp");
-                    if (r == 1) {
+            // Obtener los parámetros de inicio de sesión
+            String usuario = request.getParameter("username");
+            String contraseña = request.getParameter("password");
 
-                    } else if (r == 1) {
-                        response.sendRedirect("cliente.jsp");
-                    }
-                } else {
-                    response.sendRedirect("index.jsp");
-                }
+            // Validar los parámetros de inicio de sesión
+            if (usuario == null || usuario.trim().isEmpty() || contraseña == null || contraseña.trim().isEmpty()) {
+                request.setAttribute("errorMessage", "Usuario o contraseña no pueden estar vacíos.");
+                request.getRequestDispatcher("index.jsp").forward(request, response);
+                return;
             }
 
+            UsuarioDAO dao = new UsuarioDAO();
+            Usuario usu = new Usuario(usuario, contraseña);
+
+            try {
+                int r = dao.validar(usu);
+                if (r == 1) {
+                    HttpSession session = request.getSession();
+                    session.setAttribute("email", usu.getUsuario());
+                    response.sendRedirect("cliente.jsp");
+                } else {
+                    request.setAttribute("errorMessage", "Credenciales incorrectas. Por favor, intente nuevamente.");
+                    request.getRequestDispatcher("index.jsp").forward(request, response);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                request.setAttribute("errorMessage", e);
+                request.getRequestDispatcher("index.jsp").forward(request, response);
+            }
         }
 
         if (accion.equalsIgnoreCase("subirArchivo")) {
             Part archivo = request.getPart("archivo");
             String nombreArchivo = Paths.get(archivo.getSubmittedFileName()).getFileName().toString();
-            
+
             // Validar el tipo de archivo
             if (archivo.getContentType().startsWith("image/") && archivo.getSize() <= 20 * 1024 * 1024) {
                 // Guardar el archivo en el servidor
@@ -150,11 +176,12 @@ public class Controlador extends HttpServlet {
                     directorio.mkdirs();  // Crear el directorio si no existe
                 }
                 archivo.write(rutaSubida + File.separator + nombreArchivo);
-                
+
                 // Guardar los detalles del archivo en la base de datos
                 try {
                     Class.forName("com.mysql.jdbc.Driver");
                     Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+
                     String sql = "INSERT INTO archivos (usuario, nombre, ruta) VALUES (?, ?, ?)";
                     PreparedStatement ps = conn.prepareStatement(sql);
                     ps.setString(1, request.getSession().getAttribute("usuario").toString());  // Guardar con el usuario

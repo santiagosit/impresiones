@@ -29,6 +29,9 @@
 
         <div class="register-container">
             <h2>Registro</h2>
+            <% if (request.getAttribute("errorMessage") != null) {%>
+            <p style="color: red;"><%= request.getAttribute("errorMessage")%></p>
+            <% }%>
             <form action="Controlador" method="POST">
                 <input type="hidden" name="accion" value="registro"
                        <div class="input-group">

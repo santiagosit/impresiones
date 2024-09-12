@@ -16,7 +16,7 @@ public class UsuarioDAO implements Validar {
 
     @Override
     public int validar(Usuario usu) {
-        String sql = "SELECT * FROM usuarios WHERE email=? AND password=?";
+        String sql = "SELECT * FROM usuario WHERE email=? AND password=?";
         try {
             con = cn.getConnection();
             ps = con.prepareStatement(sql);

@@ -13,8 +13,8 @@ public class Conexion {
 
     public Connection getConnection() {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
-            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydoggy", "root", "");
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
         } catch (Exception e) {
 
         }

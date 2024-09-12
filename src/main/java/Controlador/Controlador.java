@@ -173,42 +173,48 @@ public class Controlador extends HttpServlet {
             }
         }
 
-        if (accion.equalsIgnoreCase("subirArchivo")) {
-            Part archivo = request.getPart("archivo");
-            String nombreArchivo = Paths.get(archivo.getSubmittedFileName()).getFileName().toString();
+if (accion.equalsIgnoreCase("subirArchivo")) {
+    Part archivo = request.getPart("archivo");
+    String nombreArchivo = Paths.get(archivo.getSubmittedFileName()).getFileName().toString();
 
-            // Validar el tipo de archivo
-            if (archivo.getContentType().startsWith("image/") && archivo.getSize() <= 20 * 1024 * 1024) {
-                // Guardar el archivo en el servidor
-                String rutaSubida = getServletContext().getRealPath("/") + "uploads";
-                File directorio = new File(rutaSubida);
-                if (!directorio.exists()) {
-                    directorio.mkdirs();  // Crear el directorio si no existe
-                }
-                archivo.write(rutaSubida + File.separator + nombreArchivo);
-
-                // Guardar los detalles del archivo en la base de datos
-                try {
-                    Class.forName("com.mysql.jdbc.Driver");
-                    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
-
-                    String sql = "INSERT INTO archivos (usuario, nombre, ruta) VALUES (?, ?, ?)";
-                    PreparedStatement ps = conn.prepareStatement(sql);
-                    ps.setString(1, request.getSession().getAttribute("usuario").toString());  // Guardar con el usuario
-                    ps.setString(2, nombreArchivo);
-                    ps.setString(3, "uploads/" + nombreArchivo);
-                    ps.executeUpdate();
-                    conn.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                // Redirigir a la página del cliente después de subir el archivo
-                response.sendRedirect("cliente.jsp");
-            } else {
-                // Archivo no válido
-                response.getWriter().println("Archivo no permitido o demasiado grande.");
-            }
+    // Verificar el tipo de archivo y su tamaño
+    if (archivo.getContentType().startsWith("image/") && archivo.getSize() <= 20 * 1024 * 1024) {
+        // Guardar el archivo en el servidor
+        String rutaSubida = getServletContext().getRealPath("/") + "uploads";
+        File directorio = new File(rutaSubida);
+        if (!directorio.exists()) {
+            directorio.mkdirs();  // Crear el directorio si no existe
         }
+        archivo.write(rutaSubida + File.separator + nombreArchivo);
+
+        // Obtener el email del usuario que ha iniciado sesión
+        String emailUsuario = (String) request.getSession().getAttribute("email");
+
+        // Guardar los detalles del archivo en la base de datos
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+
+            // Insertar imagen en la tabla `impresiones`
+            String sqlInsertImpresion = "INSERT INTO impresiones (id_imagen, ruta_imagen, email_usuario) VALUES (?, ?, ?)";
+            PreparedStatement psImpresion = conn.prepareStatement(sqlInsertImpresion);
+            psImpresion.setInt(1, 0);  // Ajuste según el tipo de auto-incrementación o id generado
+            psImpresion.setString(2, "uploads/" + nombreArchivo);
+            psImpresion.setString(3, emailUsuario);
+            psImpresion.executeUpdate();
+
+            conn.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Redirigir a la página del cliente después de subir el archivo
+        response.sendRedirect("cliente.jsp?imagenSubida=" + nombreArchivo);
+    } else {
+        // Archivo no válido
+        response.getWriter().println("Archivo no permitido o demasiado grande.");
+    }
+}
+
     }
 }

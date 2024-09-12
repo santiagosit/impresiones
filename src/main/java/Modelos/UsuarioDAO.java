@@ -17,7 +17,7 @@ public class UsuarioDAO implements Validar {
     @Override
 public int validar(Usuario usu) {
     String sql = "SELECT * FROM usuario WHERE email=? AND password=?";
-    try {
+    try {               
         con = cn.getConnection();
         ps = con.prepareStatement(sql);
         ps.setString(1, usu.getUsuario());
@@ -77,7 +77,7 @@ public int validar(Usuario usu) {
     @Override
     public int eliminar(String usuario, String contraseña) {
         String sqlUsuario = "DELETE FROM usuarios WHERE USUARIO=? AND CONTRASENA=?";
-        String sqlPerros = "DELETE FROM perros WHERE DUENO=?";
+        String sqlPerros = "DELETE FROM perros WHERE DUENO =?";
         String sqlEventos = "DELETE FROM calendario WHERE DUENO=?";
         int resultado = 0;
         try {

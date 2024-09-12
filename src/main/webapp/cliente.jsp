@@ -1,17 +1,32 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page import="java.sql.*"%>
+<%
+    String emailUsuario = (String) session.getAttribute("email");
+    if (emailUsuario == null) {
+        out.println("No estás autenticado.");
+        return;
+    }
+    Class.forName("com.mysql.cj.jdbc.Driver");
+    Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+
+    String sql = "SELECT ruta_imagen FROM impresiones WHERE email_usuario = ? ORDER BY id_imagen DESC LIMIT 5";
+    PreparedStatement ps = conn.prepareStatement(sql);
+    ps.setString(1, emailUsuario);
+    ResultSet rs = ps.executeQuery();
+%>
 <!DOCTYPE html>
 <html lang="es">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - ImprimeYa</title>
+    <title>Cliente - ImprimeYa</title>
     <link rel="stylesheet" href="styles.css">
-</head>
-<body>
+  </head>
+  <body>
     <header>
         <nav class="navbar">
             <div class="logo">
-                <img src="logo.png" alt="">
+                <img src="logo.png" alt="Logo ImprimeYa">
                 <span>ImprimeYa</span>
             </div>
             <ul class="nav-links">
@@ -22,52 +37,68 @@
     </header>
 
     <div class="container">
-        <div class="upload-gallery">
-            <div class="upload-section">
-                <form id="uploadForm" action="Controlador" method="POST" enctype="multipart/form-data">
-                    <label for="archivo">Subir archivo:</label>
-                    <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png" required onchange="previewImage(event)">
-                    <input type="hidden" name="accion" value="subirArchivo">
-                    <button type="submit">Subir</button>
-                </form>
-                <div class="preview">
-                    <img id="previewImg" src="" alt="Vista previa">
-                </div>
-                <button onclick="location.href = 'clienteimpresion.jsp'" type="submit">IMPRIMIR</button>
-            </div>
-
-            <div class="gallery">
-                <h2>Galería</h2>
-                <div id="imageGallery">
-                    <!-- Ejemplo de imagen. Las imágenes reales se cargarán dinámicamente con JavaScript o desde la base de datos -->
-                    <img src="example1.jpg" onclick="selectImage(this)" alt="Imagen 1">
-                    <img src="example2.jpg" onclick="selectImage(this)" alt="Imagen 2">
-                    <img src="example3.jpg" onclick="selectImage(this)" alt="Imagen 3">
-                    <img src="example4.jpg" onclick="selectImage(this)" alt="Imagen 4">
-                    <img src="example5.jpg" onclick="selectImage(this)" alt="Imagen 5">
-                </div>
-            </div>
+      <div class="upload-section">
+        <form id="uploadForm" action="Controlador" method="POST" enctype="multipart/form-data">
+          <label for="archivo">Subir archivo:</label>
+          <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png" required onchange="previewImage(event)">
+          <input type="hidden" name="accion" value="subirArchivo">
+          <button type="submit value="subirArchivo">Imprimir </button>
+        </form>
+        <div class="upload-preview-container">
+          <img id="previewImg" src="" alt="Vista previa">
         </div>
+      </div>
+
+      <div class="gallery">
+        <h2>Últimas imágenes subidas</h2>
+        <%
+          while (rs.next()) {
+              String rutaImagen = rs.getString("ruta_imagen");
+        %>
+            <img src="<%=rutaImagen%>" alt="Imagen subida" onclick="selectImageFromGallery(event)">
+        <%
+          }
+          rs.close();
+          conn.close();
+        %>
+      </div>
+
+      <% 
+        String imagenSubida = request.getParameter("imagenSubida");
+        if (imagenSubida != null && !imagenSubida.isEmpty()) { 
+      %>
+        <button id="printButton" onclick="redirectToPrintPage()">Imprimir</button>
+      <% } %>
     </div>
 
     <script>
-        function previewImage(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function() {
-                document.getElementById('previewImg').src = reader.result;
-            };
-            if (file) {
-                reader.readAsDataURL(file);
-            }
-        }
+      function previewImage(event) {
+        const previewImg = document.getElementById('previewImg');
+        const reader = new FileReader();
 
-        function selectImage(imgElement) {
-            const previewImg = document.getElementById('previewImg');
-            previewImg.src = imgElement.src;
-            // Optionally, set a hidden input to track the selected image
-            // document.getElementById('selectedImage').value = imgElement.src;
-        }
+        reader.onload = function() {
+          previewImg.src = reader.result;
+        };
+
+        reader.readAsDataURL(event.target.files[0]);
+      }
+
+      function selectImageFromGallery(event) {
+        const galleryImages = document.querySelectorAll('.gallery img');
+        
+        galleryImages.forEach(img => img.classList.remove('selected'));
+
+        event.target.classList.add('selected');
+
+        const previewImg = document.getElementById('previewImg');
+        previewImg.src = event.target.src;
+      }
+
+      document.querySelectorAll('.gallery img').forEach(img => {
+        img.addEventListener('click', selectImageFromGallery);
+      });
+
+
     </script>
-</body>
+  </body>
 </html>

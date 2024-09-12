@@ -4,6 +4,8 @@
  */
 package Controlador;
 
+import Modelos.DimensionDAO;
+import Modelos.MaterialDAO;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -21,6 +23,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import Modelos.UsuarioDAO;
 import Modelos.Usuario;
+import java.util.List;
 
 /**
  *
@@ -170,6 +173,34 @@ public class Controlador extends HttpServlet {
                 e.printStackTrace();
                 request.setAttribute("errorMessage", e);
                 request.getRequestDispatcher("index.jsp").forward(request, response);
+            }
+
+        } else if (accion.equalsIgnoreCase("guardarMaterial")) {
+            String nombreMaterial = request.getParameter("nombreMaterial");
+            int idDimensiones = Integer.parseInt(request.getParameter("idDimensiones"));
+
+            MaterialDAO materialDAO = new MaterialDAO();
+
+            try {
+                materialDAO.agregarMaterial(nombreMaterial, idDimensiones);
+                response.sendRedirect("admin.jsp"); // Redirige a la página de administración después de guardar
+            } catch (Exception e) {
+                // Manejar el error adecuadamente
+                response.getWriter().println("Error al agregar el material: " + e.getMessage());
+            }
+        } else if (accion.equalsIgnoreCase("guardarDimension")) {
+            int alto = Integer.parseInt(request.getParameter("nuevoAlto"));
+            int ancho = Integer.parseInt(request.getParameter("nuevoAncho"));
+
+            // Suponiendo que tienes una clase DimensionDAO para manejar las dimensiones
+            DimensionDAO dimensionDAO = new DimensionDAO();
+            try {
+                dimensionDAO.agregarDimension(alto, ancho);
+                response.sendRedirect("nuevoMaterial.jsp"); // Redirige de vuelta a nuevoMaterial.jsp después de agregar dimensión
+            } catch (SQLException e) {
+                e.printStackTrace();
+                // Manejar el error adecuadamente
+                response.getWriter().println("Error al agregar la dimensión: " + e.getMessage());
             }
         }
 

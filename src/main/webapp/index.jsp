@@ -26,7 +26,7 @@
             <p style="color: red;"><%= request.getAttribute("errorMessage")%></p>
             <% }%>
             <form action="Controlador" method="POST">
-                <input type="hidden" name="accion" value="login">
+                <input type="hidden" name="accion" value="login">                
                 <div class="input-group">
                     <label for="email">Usuario</label>
                     <input type="text" id="username" name="username" required>

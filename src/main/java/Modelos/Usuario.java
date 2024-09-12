@@ -7,15 +7,19 @@ package Modelos;
 public class Usuario {
     String usuario;
     String contraseña;
+    int rol;  // Nuevo campo para el rol del usuario
 
+    // Constructor vacío
     public Usuario() {
     }
 
+    // Constructor con parámetros
     public Usuario(String usuario, String contraseña) {
         this.usuario = usuario;
         this.contraseña = contraseña;
     }
 
+    // Getters y Setters
     public String getUsuario() {
         return usuario;
     }
@@ -31,4 +35,13 @@ public class Usuario {
     public void setContraseña(String contraseña) {
         this.contraseña = contraseña;
     }
+
+    public int getRol() {
+        return rol;
+    }
+
+    public void setRol(int rol) {
+        this.rol = rol;
+    }
 }
+

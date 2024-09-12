@@ -15,24 +15,27 @@ public class UsuarioDAO implements Validar {
     ResultSet rs;
 
     @Override
-    public int validar(Usuario usu) {
-        String sql = "SELECT * FROM usuario WHERE email=? AND password=?";
-        try {
-            con = cn.getConnection();
-            ps = con.prepareStatement(sql);
-            ps.setString(1, usu.getUsuario());
-            ps.setString(2, usu.getContraseña());
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                return 1; 
-            } else {
-                return 0; 
-            }
-
-        } catch (Exception e) {
+public int validar(Usuario usu) {
+    String sql = "SELECT * FROM usuario WHERE email=? AND password=?";
+    try {
+        con = cn.getConnection();
+        ps = con.prepareStatement(sql);
+        ps.setString(1, usu.getUsuario());
+        ps.setString(2, usu.getContraseña());
+        rs = ps.executeQuery();
+        if (rs.next()) {
+            // Setear el rol del usuario
+            usu.setRol(rs.getInt("rol"));
+            return 1; 
+        } else {
             return 0; 
         }
+
+    } catch (Exception e) {
+        return 0; 
     }
+}
+
     @Override
     public int macotadelete(String nombre){
         String sql = "DELETE FROM perros WHERE NOMBRE=?";

@@ -151,7 +151,17 @@ public class Controlador extends HttpServlet {
                 if (r == 1) {
                     HttpSession session = request.getSession();
                     session.setAttribute("email", usu.getUsuario());
-                    response.sendRedirect("cliente.jsp");
+                    session.setAttribute("rol", usu.getRol());  // Guardar el rol en la sesión
+
+                    // Redirigir según el rol
+                    if (usu.getRol() == 1) {
+                        response.sendRedirect("cliente.jsp");
+                    } else if (usu.getRol() == 2) {
+                        response.sendRedirect("admin.jsp");
+                    } else {
+                        request.setAttribute("errorMessage", "Rol no válido.");
+                        request.getRequestDispatcher("index.jsp").forward(request, response);
+                    }
                 } else {
                     request.setAttribute("errorMessage", "Credenciales incorrectas. Por favor, intente nuevamente.");
                     request.getRequestDispatcher("index.jsp").forward(request, response);

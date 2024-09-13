@@ -15,9 +15,9 @@
                 <span>ImprimeYa</span>
             </div>
             <ul class="nav-links">
-                <li><a href="index.html">Inicio</a></li>
+                <li><a href="index.jsp">Inicio</a></li>
             </ul>
-            <a href="index.html" class="Ingresar">Ingresar</a>
+            <a href="index.jsp" class="Ingresar">Ingresar</a>
         </nav>
     </header>
 

@@ -15,7 +15,7 @@
                     <span>ImprimeYa</span>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.jsp">Inicio</a></li>
                 </ul>
                 <a href="login.html" class="Ingresar">Ingresar</a>
             </nav>

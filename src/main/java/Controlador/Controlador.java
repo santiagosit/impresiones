@@ -23,7 +23,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import Modelos.UsuarioDAO;
 import Modelos.Usuario;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -188,47 +191,45 @@ public class Controlador extends HttpServlet {
                 // Manejar el error adecuadamente
                 response.getWriter().println("Error al agregar el material: " + e.getMessage());
             }
-        } else if (accion.equalsIgnoreCase("guardarDimension")) {
-            int alto = Integer.parseInt(request.getParameter("nuevoAlto"));
-            int ancho = Integer.parseInt(request.getParameter("nuevoAncho"));
-
-            // Suponiendo que tienes una clase DimensionDAO para manejar las dimensiones
-            DimensionDAO dimensionDAO = new DimensionDAO();
-            try {
-                dimensionDAO.agregarDimension(alto, ancho);
-                response.sendRedirect("nuevoMaterial.jsp"); // Redirige de vuelta a nuevoMaterial.jsp después de agregar dimensión
-            } catch (SQLException e) {
-                e.printStackTrace();
-                // Manejar el error adecuadamente
-                response.getWriter().println("Error al agregar la dimensión: " + e.getMessage());
-            }
-        }
-
-        if (accion.equalsIgnoreCase("subirArchivo")) {
+        } else if (accion != null && accion.equalsIgnoreCase("subirArchivo")) {
             Part archivo = request.getPart("archivo");
             String nombreArchivo = Paths.get(archivo.getSubmittedFileName()).getFileName().toString();
+            InputStream archivoContenido = archivo.getInputStream();  // Obtener el archivo como InputStream
 
-            // Validar el tipo de archivo
+            // Validar el tipo de archivo y el tamaño
             if (archivo.getContentType().startsWith("image/") && archivo.getSize() <= 20 * 1024 * 1024) {
-                // Guardar el archivo en el servidor
-                String rutaSubida = getServletContext().getRealPath("/") + "uploads";
-                File directorio = new File(rutaSubida);
-                if (!directorio.exists()) {
-                    directorio.mkdirs();  // Crear el directorio si no existe
-                }
-                archivo.write(rutaSubida + File.separator + nombreArchivo);
 
-                // Guardar los detalles del archivo en la base de datos
+                // Obtener las dimensiones de la imagen
+                BufferedImage imagen = ImageIO.read(archivoContenido);
+                if (imagen == null) {
+                    response.getWriter().println("El archivo no es una imagen válida.");
+                    return;
+                }
+                int ancho = imagen.getWidth();
+                int alto = imagen.getHeight();
+
+                // Resetear InputStream para poder guardar el archivo en la base de datos
+                archivoContenido = archivo.getInputStream();
+
                 try {
-                    Class.forName("com.mysql.jdbc.Driver");
+                    // Conectar con la base de datos
+                    Class.forName("com.mysql.cj.jdbc.Driver");
                     Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
 
-                    String sql = "INSERT INTO archivos (usuario, nombre, ruta) VALUES (?, ?, ?)";
+                    // Consulta SQL para insertar los datos de la imagen
+                    String sql = "INSERT INTO imagen (id_usuario, tipo_imagen, ruta_imagen, alto, ancho) VALUES (?, ?, ?, ?, ?)";
                     PreparedStatement ps = conn.prepareStatement(sql);
-                    ps.setString(1, request.getSession().getAttribute("usuario").toString());  // Guardar con el usuario
-                    ps.setString(2, nombreArchivo);
-                    ps.setString(3, "uploads/" + nombreArchivo);
-                    ps.executeUpdate();
+
+                    // Obtener el id del usuario desde la sesión (ajustar según tu implementación)
+                    String usuarioId = (String) request.getSession().getAttribute("email");
+
+                    ps.setString(1, usuarioId); // Id del usuario
+                    ps.setString(2, archivo.getContentType()); // Tipo de archivo (jpg, png, etc.)
+                    ps.setBlob(3, archivoContenido); // Guardar el archivo como BLOB
+                    ps.setInt(4, alto); // Alto de la imagen en píxeles
+                    ps.setInt(5, ancho); // Ancho de la imagen en píxeles
+
+                    ps.executeUpdate(); // Ejecutar la inserción
                     conn.close();
                 } catch (Exception e) {
                     e.printStackTrace();

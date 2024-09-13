@@ -35,18 +35,6 @@
                 </div>
                 <button onclick="location.href = 'clienteimpresion.jsp'" type="submit">IMPRIMIR</button>
             </div>
-
-            <div class="gallery">
-                <h2>Galería</h2>
-                <div id="imageGallery">
-                    <!-- Ejemplo de imagen. Las imágenes reales se cargarán dinámicamente con JavaScript o desde la base de datos -->
-                    <img src="example1.jpg" onclick="selectImage(this)" alt="Imagen 1">
-                    <img src="example2.jpg" onclick="selectImage(this)" alt="Imagen 2">
-                    <img src="example3.jpg" onclick="selectImage(this)" alt="Imagen 3">
-                    <img src="example4.jpg" onclick="selectImage(this)" alt="Imagen 4">
-                    <img src="example5.jpg" onclick="selectImage(this)" alt="Imagen 5">
-                </div>
-            </div>
         </div>
     </div>
 
@@ -60,13 +48,6 @@
             if (file) {
                 reader.readAsDataURL(file);
             }
-        }
-
-        function selectImage(imgElement) {
-            const previewImg = document.getElementById('previewImg');
-            previewImg.src = imgElement.src;
-            // Optionally, set a hidden input to track the selected image
-            // document.getElementById('selectedImage').value = imgElement.src;
         }
     </script>
 </body>

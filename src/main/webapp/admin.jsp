@@ -42,7 +42,7 @@
                     <span>ImprimeYa</span>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.jsp">Inicio</a></li>
                 </ul>
             </nav>
         </header>
@@ -131,6 +131,7 @@
                         <thead>
                             <tr>
                                 <th>Material</th>
+                                <th>Dimensiones (Alto x Ancho)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -147,17 +148,23 @@
                                     conMaterials = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
                                     // Crear una sentencia
                                     stmtMaterials = conMaterials.createStatement();
-                                    // Ejecutar la consulta
-                                    String sqlMaterials = "SELECT nombre_material FROM material";
+                                    // Ejecutar la consulta con JOIN entre material y dimensiones, ordenando alfabéticamente
+                                    String sqlMaterials = "SELECT mat.nombre_material, dim.alto, dim.ancho " +
+                                                          "FROM material mat " +
+                                                          "JOIN dimensiones dim ON mat.id_dimensiones = dim.id_dimensiones " +
+                                                          "ORDER BY mat.nombre_material ASC";
                                     rsMaterials = stmtMaterials.executeQuery(sqlMaterials);
 
                                     // Iterar sobre el ResultSet y mostrar los resultados
                                     while (rsMaterials.next()) {
                                         String nombreMaterial = rsMaterials.getString("nombre_material");
+                                        int alto = rsMaterials.getInt("alto");
+                                        int ancho = rsMaterials.getInt("ancho");
                                         hasMaterials = true;
                             %>
                             <tr>
                                 <td><%= nombreMaterial %></td>
+                                <td><%= alto %> x <%= ancho %></td>
                             </tr>
                             <% 
                                     }
@@ -178,7 +185,7 @@
                             %>
                             <% if (!hasMaterials) { %>
                             <tr>
-                                <td>No hay materiales disponibles.</td>
+                                <td colspan="2">No hay materiales disponibles.</td>
                             </tr>
                             <% } %>
                         </tbody>

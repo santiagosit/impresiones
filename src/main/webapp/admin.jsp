@@ -1,6 +1,5 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ page import="java.sql.Connection, java.sql.DriverManager, java.sql.ResultSet, java.sql.SQLException, java.sql.Statement" %>
-
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -40,133 +39,155 @@
         <header>
             <nav class="navbar">
                 <div class="logo">
-                    <img src="logo.png" alt="">
                     <span>ImprimeYa</span>
                 </div>
                 <ul class="nav-links">
                     <li><a href="index.html">Inicio</a></li>
                 </ul>
-                <a href="login.html" class="Ingresar">Ingresar</a>
             </nav>
         </header>
 
         <div class="container">
             <div class="notification-section">
                 <h2>NOTIFICACIONES</h2>
-                <div class="table-container">
-                    <!-- Tabla de documentos impresos -->
-                    <div class="table">
-                        <h3>DOCUMENTOS IMPRESOS</h3>
-                        <table>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Documento</th>
-                                <th>Monto</th>
-                            </tr>
-                            <tr>
-                                <td>23/05/2024</td>
-                                <td>DOCUMENTO 1</td>
-                                <td>$2000</td>
-                            </tr>
-                            <tr>
-                                <td>12/06/2024</td>
-                                <td>DOCUMENTO 2</td>
-                                <td>$3500</td>
-                            </tr>
-                            <tr>
-                                <td>17/07/2024</td>
-                                <td>DOCUMENTO 3</td>
-                                <td>$200</td>
-                            </tr>
-                            <tr>
-                                <td>01/08/2024</td>
-                                <td>DOCUMENTO 4</td>
-                                <td>$5700</td>
-                            </tr>
-                        </table>
-                    </div>
 
-                    <!-- Tabla de documentos por imprimir -->
-                    <div class="table">
-                        <h3>DOCUMENTOS POR IMPRIMIR</h3>
-                        <table>
+                <!-- Tabla de documentos impresos y por imprimir -->
+                <div class="table">
+                    <h3>Documentos Impresos y por Imprimir</h3>
+                    <table>
+                        <thead>
                             <tr>
-                                <th>Fecha</th>
-                                <th>Documento</th>
-                                <th>Monto</th>
+                                <th>Nombre de la Imagen</th>
+                                <th>Estado</th>
+                                <th>Fecha de Orden</th>
+                                <th>Material</th>
+                                <th>Nombre del Usuario</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            <% 
+                                Connection con = null;
+                                Statement stmt = null;
+                                ResultSet rs = null;
+
+                                try {
+                                    // Cargar el controlador JDBC
+                                    Class.forName("com.mysql.cj.jdbc.Driver");
+                                    // Establecer la conexión con la base de datos
+                                    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+                                    // Crear la sentencia
+                                    stmt = con.createStatement();
+                                    // Ejecutar la consulta para obtener los detalles de las impresiones
+                                    String sql = "SELECT img.tipo_imagen AS nombre_imagen, est.estado AS estado_imagen, ord.fecha AS fecha_orden, " +
+                                                 "mat.nombre_material AS material_impresion, usr.fullname AS usuario_imagen " +
+                                                 "FROM impresiones imp " +
+                                                 "JOIN imagen img ON imp.id_imagen = img.id_imagen " +
+                                                 "JOIN estado est ON imp.id_estado = est.id_estado " +
+                                                 "JOIN material mat ON imp.id_material = mat.id_material " +
+                                                 "JOIN usuario usr ON img.id_usuario = usr.email " +
+                                                 "JOIN orden ord ON imp.id_orden = ord.id_orden";
+                                    rs = stmt.executeQuery(sql);
+
+                                    // Iterar sobre el ResultSet y mostrar los resultados
+                                    while (rs.next()) {
+                                        String nombreImagen = rs.getString("nombre_imagen");
+                                        String estadoImagen = rs.getString("estado_imagen");
+                                        String fechaOrden = rs.getString("fecha_orden");
+                                        String materialImpresion = rs.getString("material_impresion");
+                                        String usuarioImagen = rs.getString("usuario_imagen");
+                            %>
                             <tr>
-                                <td>05/09/2024</td>
-                                <td>DOCUMENTO 5</td>
-                                <td>$30000</td>
+                                <td><%= nombreImagen %></td>
+                                <td><%= estadoImagen %></td>
+                                <td><%= fechaOrden %></td>
+                                <td><%= materialImpresion %></td>
+                                <td><%= usuarioImagen %></td>
                             </tr>
-                        </table>
-                    </div>
-
-                    <!--Tabla de materiales -->
-                    <div class="table">
-                        <h3>Materiales</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Material</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% 
-                                    Connection con = null;
-                                    Statement stmt = null;
-                                    ResultSet rs = null;
-                                    boolean hasMaterials = false;
-
+                            <% 
+                                    }
+                                } catch (ClassNotFoundException e) {
+                                    e.printStackTrace();
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    // Cerrar recursos
                                     try {
-                                        // Cargar el controlador JDBC
-                                        Class.forName("com.mysql.cj.jdbc.Driver");
-                                        // Establecer la conexión con la base de datos
-                                        con = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
-                                        // Crear una sentencia
-                                        stmt = con.createStatement();
-                                        // Ejecutar la consulta
-                                        String sql = "SELECT nombre_material FROM material";
-                                        rs = stmt.executeQuery(sql);
-
-                                        // Iterar sobre el ResultSet y mostrar los resultados
-                                        while (rs.next()) {
-                                            String nombreMaterial = rs.getString("nombre_material");
-                                            hasMaterials = true;
-                                %>
-                                <tr>
-                                    <td><%= nombreMaterial %></td>
-                                </tr>
-                                <% 
-                                        }
-                                    } catch (ClassNotFoundException e) {
-                                        e.printStackTrace();
+                                        if (rs != null) rs.close();
+                                        if (stmt != null) stmt.close();
+                                        if (con != null) con.close();
                                     } catch (SQLException e) {
                                         e.printStackTrace();
-                                    } finally {
-                                        // Cerrar recursos
-                                        try {
-                                            if (rs != null) rs.close();
-                                            if (stmt != null) stmt.close();
-                                            if (con != null) con.close();
-                                        } catch (SQLException e) {
-                                            e.printStackTrace();
-                                        }
                                     }
-                                %>
-                                <% if (!hasMaterials) { %>
-                                <tr>
-                                    <td>No hay materiales disponibles.</td>
-                                </tr>
-                                <% } %>
-                            </tbody>
-                        </table>                        
-                        <a href="nuevoMaterial.jsp">
-                            <input type="submit" value="Nuevo Material">
-                        </a>                                                           
-                    </div>
+                                }
+                            %>
+                        </tbody>
+                    </table>
                 </div>
+
+                <!-- Tabla de materiales existente -->
+                <div class="table">
+                    <h3>Materiales</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Material</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% 
+                                Connection conMaterials = null;
+                                Statement stmtMaterials = null;
+                                ResultSet rsMaterials = null;
+                                boolean hasMaterials = false;
+
+                                try {
+                                    // Cargar el controlador JDBC
+                                    Class.forName("com.mysql.cj.jdbc.Driver");
+                                    // Establecer la conexión con la base de datos
+                                    conMaterials = DriverManager.getConnection("jdbc:mysql://localhost:3306/gestorimpresiones", "root", "");
+                                    // Crear una sentencia
+                                    stmtMaterials = conMaterials.createStatement();
+                                    // Ejecutar la consulta
+                                    String sqlMaterials = "SELECT nombre_material FROM material";
+                                    rsMaterials = stmtMaterials.executeQuery(sqlMaterials);
+
+                                    // Iterar sobre el ResultSet y mostrar los resultados
+                                    while (rsMaterials.next()) {
+                                        String nombreMaterial = rsMaterials.getString("nombre_material");
+                                        hasMaterials = true;
+                            %>
+                            <tr>
+                                <td><%= nombreMaterial %></td>
+                            </tr>
+                            <% 
+                                    }
+                                } catch (ClassNotFoundException e) {
+                                    e.printStackTrace();
+                                } catch (SQLException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    // Cerrar recursos
+                                    try {
+                                        if (rsMaterials != null) rsMaterials.close();
+                                        if (stmtMaterials != null) stmtMaterials.close();
+                                        if (conMaterials != null) conMaterials.close();
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            %>
+                            <% if (!hasMaterials) { %>
+                            <tr>
+                                <td>No hay materiales disponibles.</td>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>                        
+                    <a href="nuevoMaterial.jsp">
+                        <input type="submit" value="Nuevo Material">
+                    </a>                                                           
+                </div>
+
             </div>
         </div>
     </body>

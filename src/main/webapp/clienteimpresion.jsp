@@ -5,6 +5,15 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+    String rutaImagen = (String) session.getAttribute("imagenSeleccionada");
+    if (rutaImagen != null) {
+        // Usa 'rutaImagen' para mostrar la imagen, por ejemplo:
+        out.println("<img src=\"" + rutaImagen + "\" alt=\"Imagen seleccionada\">");
+    } else {
+        out.println("No se ha seleccionado ninguna imagen.");
+    }
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

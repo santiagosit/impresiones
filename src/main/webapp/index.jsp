@@ -15,9 +15,9 @@
                     <span>ImprimeYa</span>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.jsp">Inicio</a></li>
                 </ul>
-                <a href="login.html" class="Ingresar">Ingresar</a>
+                <a href="index.jsp" class="Ingresar">Ingresar</a>
             </nav>
         </header>
 
@@ -35,7 +35,7 @@
                     <label for="password">Contraseña</label>
                     <input type="password" id="password" name="password" required>
                 </div>
-                <button type="submit value="login">Ingresar </button>
+                <button type="submit" value="login">Ingresar </button>
             </form>
 
             <div class="new-user">

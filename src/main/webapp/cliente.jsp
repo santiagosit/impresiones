@@ -12,7 +12,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Cliente - ImprimeYa</title>
+        <title>Cliente   
+ - ImprimeYa</title>
         <link rel="stylesheet" href="styles.css">
     </head>
     <body>
@@ -23,20 +24,19 @@
                     <span>ImprimeYa</span>
                 </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.jsp">Inicio</a></li>
                 </ul>
-                <a href="index.html" class="Ingresar">Ingresar</a>
+                <a href="index.jsp" class="Ingresar">emailUsuario</a> 
             </nav>
         </header>
 
         <div class="container">
             <div class="upload-section">
-                
+
                 <form id="uploadForm" action="Controlador" method="POST" enctype="multipart/form-data"> 
-                    <input type="hidden" name="accion" value="subirArchivo">
                     <label for="archivo">Subir archivo:</label>
                     <input type="file" id="archivo" name="archivo" accept=".jpg,.jpeg,.png" required onchange="previewImage(event)">
-                    <button type="submit">Imprimir</button>
+                    <input type="submit" name="accion" value ="subir">
                 </form>
                 <div class="upload-preview-container">
                     <img id="previewImg" src="" alt="Vista previa">
@@ -50,7 +50,8 @@
                 const reader = new FileReader();
 
                 reader.onload = function () {
-                    previewImg.src = reader.result;
+                    previewImg.src = reader.result;   
+
                 };
 
                 reader.readAsDataURL(event.target.files[0]);

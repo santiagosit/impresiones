@@ -1,31 +1,34 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package Modelos;
 
 public class Usuario {
-    String usuario;
-    String contraseña;
-    int rol;  // Nuevo campo para el rol del usuario
+    private String email;
+    private String contraseña;
+    private int rol;
 
     // Constructor vacío
     public Usuario() {
     }
 
     // Constructor con parámetros
-    public Usuario(String usuario, String contraseña) {
-        this.usuario = usuario;
+    public Usuario(String email, String contraseña) {
+        this.email = email;
         this.contraseña = contraseña;
     }
 
-    // Getters y Setters
-    public String getUsuario() {
-        return usuario;
+    // Constructor con todos los campos
+    public Usuario(String email, String contraseña, int rol) {
+        this.email = email;
+        this.contraseña = contraseña;
+        this.rol = rol;
     }
 
-    public void setUsuario(String usuario) {
-        this.usuario = usuario;
+    // Getters y Setters
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getContraseña() {
@@ -44,4 +47,3 @@ public class Usuario {
         this.rol = rol;
     }
 }
-

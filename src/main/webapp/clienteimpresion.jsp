@@ -1,123 +1,87 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ page import="java.util.List" %>
+<%@ page import="Modelos.MaterialDAO, Modelos.Material, Modelos.Dimensiones, Modelos.DimensionDAO" %>
 <!DOCTYPE html>
 <html lang="es">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="styles.css">
-        <title>Impresiones</title>
+        <title>Configuración de Impresión</title>
     </head>
     <body>
-        <header>
-            <nav class="navbar">
-                <div class="logo">
-                    <img src="logo.png" alt="ImprimeYa Logo">
-                    <span>ImprimeYa</span>
-                </div>
-                <ul class="nav-links">
-                    <li><a href="index.html">Inicio</a></li>
-                </ul>
-                <a href="index.html" class="Ingresar">Ingresar</a>
-            </nav>
-        </header>
+        <h1>Configuración de Impresión</h1>
+        <form action="Controlador" method="post">
+            <input type="hidden" name="accion" value="configurarimpresion">
+            <input type="hidden" name="id_imagen" value="<%= request.getAttribute("id_imagen") %>">           
+            <input type="hidden" name="id_orden" value="<%= request.getAttribute("id_orden") %>">
 
-        <!-- SecciÃ³n de opciones de impresiÃ³n -->
-        <div class="options-section">
-            <label for="copias">Copias</label>
-            <input type="number" id="copias" name="copias" value="1" min="1" onchange="calcularPrecioTotal()">
-
-            <label for="tipo-impresion">Tipo de ImpresiÃ³n</label>
-            <select id="tipo-impresion" name="tipo-impresion" onchange="calcularPrecioTotal()">
-                <option value="normal">Normal</option>
-                <option value="calidad">Alta Calidad</option>
+            <label for="material">Seleccionar Material:</label>
+            <select id="material" name="material" onchange="fetchDimensiones(this.value)" required>
+                <option value="">Seleccione un material</option>
+                <% 
+                    MaterialDAO materialDAO = new MaterialDAO();
+                    List<Material> materiales = materialDAO.obtenerMaterialesUnicos(); // Método para obtener materiales
+                    for (Material material : materiales) {
+                %>
+                <option value="<%= material.getIdMaterial() %>"><%= material.getNombreMaterial() %></option>
+                <% 
+                    } 
+                %>
             </select>
+            <br>
 
-            <label for="material">Material</label>
-            <select id="material" name="material" onchange="calcularPrecioTotal()">
-                <option value="Papel">Papel</option>
-                <option value="Papel Fotografico">Papel FotogrÃ¡fico</option>
-                <option value="Afiche">Afiche</option>
+            <label for="dimensiones">Seleccionar Dimensiones:</label>
+            <select id="dimensiones" name="dimensiones" required>
+                <option value="">Seleccione una dimensión</option>
             </select>
+            <br>
 
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="double-sided" name="double-sided" onchange="calcularPrecioTotal()"> Ambos Lados</label>
-                <label><input type="checkbox" id="color" name="color" onchange="toggleCheckbox('color')"> Color</label>
-                <label><input type="checkbox" id="bn" name="bn" onchange="toggleCheckbox('bn')"> Blanco y Negro</label>
-            </div>
+            <label for="copias">Número de Copias:</label>
+            <input type="number" id="copias" name="copias" min="1" required>
+            <br>
 
-            <div class="price-group">
-                <div>
-                    <label for="unit-price">Valor Unitario</label>
-                    <span id="unit-price">$700</span>
-                </div>
-                <div>
-                    <label for="total-price">Valor Total</label>
-                    <span id="total-price">$700</span>
-                </div>
-            </div>
+            <label for="tipo_impresion">Tipo de Impresión:</label>
+            <select id="tipo_impresion" name="tipo_impresion" required>
+                <option value="blanco_negro">Blanco y Negro</option>
+                <option value="color">Color</option>
+            </select>
+            <br>
 
-            <button class="pay-button" onclick="imprimir()">Imprimir</button>
-        </div>
+            <input type="submit" value="Calcular y Guardar">
+        </form>
 
         <script>
-            function toggleCheckbox(selected) {
-                var colorCheckbox = document.getElementById("color");
-                var bnCheckbox = document.getElementById("bn");
-
-                // Si se selecciona "Color", deselecciona "Blanco y Negro" y viceversa
-                if (selected === 'color') {
-                    bnCheckbox.checked = false;
-                } else if (selected === 'bn') {
-                    colorCheckbox.checked = false;
-                }
-
-                calcularPrecioTotal();
+            function fetchDimensiones(materialId) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "getDimensiones?materialId=" + materialId, true);
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        var dimensiones = JSON.parse(xhr.responseText);
+                        var select = document.getElementById("dimensiones");
+                        select.innerHTML = '<option value="">Seleccione una dimensión</option>';
+                        for (var i = 0; i < dimensiones.length; i++) {
+                            var option = document.createElement("option");
+                            option.value = dimensiones[i].id;
+                            option.text = dimensiones[i].nombre;
+                            select.add(option);
+                        }
+                    } else {
+                        console.error("Error al cargar dimensiones:", xhr.status, xhr.statusText);
+                    }
+                };
+                xhr.send();
             }
 
-            function calcularPrecioTotal() {
-                let copias = parseInt(document.getElementById("copias").value);
-                let colorChecked = document.getElementById("color").checked;
-                let bnChecked = document.getElementById("bn").checked;
-                let doubleSidedChecked = document.getElementById("double-sided").checked;
-
-                let unitPrice = 500;  // Precio base para blanco y negro
-                let doubleSidedPrice = 0;  // Incremento de precio para ambos lados
-
-                // Ajustar el precio segÃºn las opciones seleccionadas
-                if (colorChecked) {
-                    unitPrice = 600;  // Precio base para color
-                }
-
-                // Si ambos lados estÃ¡ seleccionado, sumar 100 al precio unitario
-                if (doubleSidedChecked) {
-                    doubleSidedPrice = 100;
-                }
-
-                // Calcular el precio unitario final sumando el valor de ambos lados
-                let finalUnitPrice = unitPrice + doubleSidedPrice;
-
-                // Calcular el precio total multiplicando el precio unitario por la cantidad de copias
-                let totalPrice = finalUnitPrice * copias;
-
-                // Actualizar el valor en la interfaz
-                document.getElementById("unit-price").textContent = "$" + finalUnitPrice;
-                document.getElementById("total-price").textContent = "$" + totalPrice;
-            }
-
-            function imprimir() {
-                // Mostrar mensaje de impresiÃ³n en proceso
-                alert("ImpresiÃ³n en proceso...");
-
-                // Redirigir a cliente.jsp despuÃ©s de 2 segundos (2000 ms)
-                setTimeout(function () {
-                    window.location.href = "cliente.jsp";
-                }, 2000);
-            }
-
-            // Calcular el precio inicial al cargar la pÃ¡gina
-            window.onload = function () {
-                calcularPrecioTotal();
-            };
         </script>
+
+        <% 
+            // Verificar si totalPrecio está disponible
+            if (request.getAttribute("totalPrecio") != null) {
+                int totalPrecio = (int) request.getAttribute("totalPrecio");
+        %>
+        <h2>Total a Pagar: $<%= totalPrecio %></h2>
+        <a href="cliente.jsp">Regresar a la Página de Cliente</a>
+        <% 
+            }
+        %>
     </body>
 </html>

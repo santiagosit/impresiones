@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import Modelos.Imagen;
 import Modelos.ImagenDAO;
+import Modelos.Impresion;
+import Modelos.ImpresionDAO;
 import Modelos.MaterialDAO;
 import Modelos.UsuarioDAO;
 import Modelos.Usuario;
@@ -19,6 +21,10 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Johan Herrera
@@ -58,8 +64,17 @@ public class Controlador extends HttpServlet {
             case "guardarmaterial":
                 handleGuardarMaterial(request, response);
                 break;
-            case "subirimagen":
-                handleSubirImagen(request, response);
+            case "subirimagen": {
+                try {
+                    handleSubirImagen(request, response);
+                } catch (SQLException ex) {
+                    Logger.getLogger(Controlador.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            break;
+
+            case "configurarimpresion":  // Nuevo caso
+                handleConfigurarImpresion(request, response);
                 break;
             default:
                 request.setAttribute("errorMessage", "Acción no reconocida.");
@@ -163,8 +178,9 @@ public class Controlador extends HttpServlet {
         }
     }
 
+// Método modificado para manejar la subida de imágenes
     private void handleSubirImagen(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException, SQLException {
         String nombreImagen = request.getParameter("txtnombre");
         Part filePart = request.getPart("fileImagen");
 
@@ -179,30 +195,144 @@ public class Controlador extends HttpServlet {
             byte[] imageData;
             try (InputStream inputStream = filePart.getInputStream()) {
                 imageData = inputStream.readAllBytes();
-                System.out.println("Tamaño del archivo: " + imageData.length + " bytes"); // Debugging
-            } catch (IOException e) {
-                e.printStackTrace();
-                request.setAttribute("errorMessage", "Error al leer el archivo.");
-                request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
-                return;
             }
 
             // Crear un objeto Imagen con los datos binarios
             Imagen imagen = new Imagen(email, nombreImagen, imageData);
 
-            // Guardar la imagen en la base de datos
-            boolean guardado = imagenDAO.guardarImagenEnBD(imagen);
+            // Guardar la imagen en la base de datos y obtener el id_imagen generado
+            int idImagen = imagenDAO.guardarImagenEnBD(imagen);
 
-            if (guardado) {
+            if (idImagen != -1) {
+                // Insertar un registro en la tabla ordenes
+                int idOrden = insertarOrden(email);
+
+                // Redirigir a la página clienteimpresion.jsp con el id de la imagen
                 request.setAttribute("mensaje", "Imagen subida correctamente");
+                request.setAttribute("id_imagen", idImagen);  // Pasamos el id_imagen
+                request.setAttribute("id_orden", idOrden);    // Pasamos el id_orden
+
+                // Obtener lista de materiales de la base de datos
+                MaterialDAO materialDAO = new MaterialDAO();
+                request.setAttribute("materiales", materialDAO.obtenerMaterialesUnicos());  // Asume que hay un método para esto
+
+                request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
             } else {
-                request.setAttribute("mensaje", "Error al subir la imagen");
+                request.setAttribute("errorMessage", "Error al subir la imagen");
+                request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
             }
-            request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
         } else {
             request.setAttribute("errorMessage", "Error al subir la imagen. Asegúrate de que el archivo esté disponible y que estés registrado.");
             request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
         }
+    }
+
+    private void handleConfigurarImpresion(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            // Validar y parsear id_imagen
+            String idImagenStr = request.getParameter("id_imagen");
+            if (idImagenStr == null || idImagenStr.isEmpty()) {
+                throw new IllegalArgumentException("ID de imagen no proporcionado.");
+            }
+            int idImagen = Integer.parseInt(idImagenStr);
+
+            // Validar y parsear id_orden
+            String idOrdenStr = request.getParameter("id_orden");
+            if (idOrdenStr == null || idOrdenStr.isEmpty()) {
+                throw new IllegalArgumentException("ID de orden no proporcionado.");
+            }
+            int idOrden = Integer.parseInt(idOrdenStr);
+
+            // Validar y parsear copias
+            String copiasStr = request.getParameter("copias");
+            if (copiasStr == null || copiasStr.isEmpty()) {
+                throw new IllegalArgumentException("Número de copias no proporcionado.");
+            }
+            int copias = Integer.parseInt(copiasStr);
+
+            // Validar tipo_impresion
+            String tipoImpresion = request.getParameter("tipo_impresion");
+            if (tipoImpresion == null || tipoImpresion.isEmpty()
+                    || (!"color".equals(tipoImpresion) && !"blanco_negro".equals(tipoImpresion))) {
+                throw new IllegalArgumentException("Tipo de impresión inválido.");
+            }
+
+            // Validar y parsear id_material
+            String idMaterialStr = request.getParameter("material");
+            if (idMaterialStr == null || idMaterialStr.isEmpty()) {
+                throw new IllegalArgumentException("ID de material no proporcionado.");
+            }
+            int idMaterial = Integer.parseInt(idMaterialStr);
+
+            // Validar y parsear id_dimensiones
+            String idDimensionesStr = request.getParameter("dimensiones");
+            if (idDimensionesStr == null || idDimensionesStr.isEmpty()) {
+                throw new IllegalArgumentException("ID de dimensiones no proporcionado.");
+            }
+            int idDimensiones = Integer.parseInt(idDimensionesStr);
+
+            // Determinar el tipo de impresión
+            boolean color = "color".equals(tipoImpresion);
+            boolean bn = "blanco_negro".equals(tipoImpresion);
+
+            // Calcular el precio
+            int precioPorCopia = color ? 600 : 400;
+            int totalPrecio = precioPorCopia * copias;
+
+            // Crear el objeto Impresion
+            Impresion impresion = new Impresion();
+            impresion.setIdImagen(idImagen);
+            impresion.setIdMaterial(idMaterial);
+            impresion.setIdDimensiones(idDimensiones); // Establecer dimensiones
+            impresion.setCopias(copias);
+            impresion.setColor(color);
+            impresion.setBn(bn);
+            impresion.setIdEstado(1); // Estado inicial
+            impresion.setIdOrden(idOrden); // Usar id_orden
+
+            // Guardar la impresión en la base de datos
+            ImpresionDAO impresionDAO = new ImpresionDAO();
+            impresionDAO.guardarImpresion(impresion);
+
+            // Enviar el resultado a la página de confirmación
+            request.setAttribute("totalPrecio", totalPrecio);
+            request.getRequestDispatcher("Confirmacion.jsp").forward(request, response);
+
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Formato de número inválido. Verifique los valores ingresados.");
+            request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", e.getMessage());
+            request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Error al procesar la configuración de impresión.");
+            request.getRequestDispatcher("clienteimpresion.jsp").forward(request, response);
+        }
+    }
+
+    private int insertarOrden(String email) throws SQLException {
+        int idOrden = -1;
+        String url = "jdbc:mysql://localhost:3306/gestorimpresiones";
+        String user = "root";
+        String password = "";  // Reemplaza con la contraseña real si es necesario
+
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
+            String sql = "INSERT INTO orden (fecha) VALUES (NOW())";
+            try (PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+                ps.executeUpdate();
+
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idOrden = rs.getInt(1);
+                    }
+                }
+            }
+        }
+        return idOrden;
     }
 
 }

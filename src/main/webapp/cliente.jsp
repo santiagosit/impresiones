@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
     <head>
+        
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Registro - ImprimeYa</title>
@@ -44,6 +45,26 @@
                     </div>
                 </div>
             </form>
+                <h3>Tus Impresiones Recientes</h3>
+    <div class="card">
+        <div class="card-body">
+            <ul class="list-group">
+                <c:if test="${not empty impresiones}">
+                    <c:forEach var="impresion" items="${impresiones}">
+                        <li class="list-group-item">
+                            <strong>ID Imagen:</strong> ${impresion.idImagen} 
+                            | <strong>Material:</strong> ${impresion.idMaterial}
+                            | <strong>Dimensiones:</strong> ${impresion.idDimensiones}
+                            | <strong>Estado:</strong> ${impresion.idEstado}
+                        </li>
+                    </c:forEach>
+                </c:if>
+                <c:if test="${empty impresiones}">
+                    <li class="list-group-item">No tienes impresiones recientes.</li>
+                </c:if>
+            </ul>
+        </div>
+    </div>
         </div>
 
         <script>

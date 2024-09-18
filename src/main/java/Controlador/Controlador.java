@@ -23,6 +23,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,13 +61,24 @@ public class Controlador extends HttpServlet {
                 break;
             case "login":
                 handleLogin(request, response);
+            {
+                try {
+                    handleObtenerImpresiones(request, response);
+                } catch (SQLException ex) {
+                    Logger.getLogger(Controlador.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
                 break;
+
             case "guardarmaterial":
                 handleGuardarMaterial(request, response);
                 break;
+                
+                
             case "subirimagen": {
                 try {
                     handleSubirImagen(request, response);
+
                 } catch (SQLException ex) {
                     Logger.getLogger(Controlador.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -333,6 +345,24 @@ public class Controlador extends HttpServlet {
             }
         }
         return idOrden;
+    }
+
+    private void handleObtenerImpresiones(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+
+        HttpSession session = request.getSession();
+        String email = (String) session.getAttribute("email");
+
+        if (email != null) {
+            ImpresionDAO impresionDAO = new ImpresionDAO();
+            List<Impresion> impresiones = impresionDAO.obtenerImpresionesPorUsuario(email);
+
+            request.setAttribute("impresiones", impresiones);
+            request.getRequestDispatcher("cliente.jsp").forward(request, response);
+        } else {
+            request.setAttribute("errorMessage", "No se encontraron impresiones para este usuario.");
+            request.getRequestDispatcher("index.jsp").forward(request, response);
+        }
     }
 
 }
